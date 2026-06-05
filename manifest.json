@@ -1,0 +1,24 @@
+{
+  "name": "fieldclim_course_units",
+  "course_units": [
+    "L01_fieldclim_datenbasis_und_station.qmd",
+    "L02_strahlung_bodenwaermestrom_datenpruefung.qmd",
+    "L03_weather_station_objekt_und_basisworkflow.qmd",
+    "L04_waermeflussmethoden_mit_fieldclim.qmd"
+  ],
+  "language": "de",
+  "plotting": "base R",
+  "path_strategy": "here::here with package-data fallback",
+  "bibliography": "assets/geoinfo.bib",
+  "created_from": [
+    "fieldclim_missing_data(3).Rmd",
+    "fieldclim_missing_data_en(1).Rmd",
+    "fieldclim_workflow_steps(3).Rmd",
+    "fieldclim_workflow_steps_en(2).Rmd",
+    "fieldclim_flux_workflow(3).Rmd",
+    "fieldclim_flux_workflow_en(3).Rmd",
+    "fieldclim_m2m_en.Rmd",
+    "fieldclim_formula_reference_vignette(1).Rmd",
+    "fieldclim_theory(1).Rmd"
+  ]
+}

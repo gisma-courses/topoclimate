@@ -1,0 +1,272 @@
+---
+title: "Strahlung und Bodenwärmestrom prüfen"
+title-block-banner: ../images/splash_L02_1.png
+title-block-banner-color: black
+bibliography: ../assets/geoinfo.bib
+lang: de
+comments: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Ziel dieser Kurseinheit
+
+Diese Einheit übersetzt die bekannte Energiebilanzlogik in eine praktische Datenprüfung. Es geht noch nicht darum, turbulente Wärmeflüsse zu berechnen. Es geht darum, ob die Eingangsgrößen für solche Berechnungen zeitlich, rechnerisch und begrifflich konsistent sind.
+
+Die beiden Arbeitsgrößen sind Netto-Strahlung und Bodenwärmestrom. Aus ihnen entsteht die verfügbare Energie, also der Energieanteil, der in den folgenden Einheiten für fühlbare und latente Wärmeflüsse betrachtet wird.
+
+$$
+A = Q^* - B
+$$
+
+Dabei ist `Q_star` die Netto-Strahlung, `B` der Bodenwärmestrom und `A` die verfügbare Energie. In `fieldClim` entspricht `rad_bal` der Netto-Strahlung und `soil_flux` dem Bodenwärmestrom.
+
+::: {.callout-note title="Arbeitsprinzip in R"}
+Der Code bleibt absichtlich einfach. Wir verwenden `read.csv()`, direkte Spaltenzugriffe mit `$`, kleine `data.frame()`-Tabellen und base-R-Plots. Das Ziel ist nicht ein eleganter R-Stil, sondern eine nachvollziehbare Übersetzung von Stationsdaten in `fieldClim`-Berechnungen. Pfade laufen über `here::here()`. Wenn die Kursdatei `data/caldern_wiese_2017-06-30.csv` nicht vorhanden ist, nutzt der Code als Fallback die mit dem Paket ausgelieferte Beispieldatei.
+:::
+
+```{r load-packages-and-data}
+library(fieldClim)
+library(here)
+
+# Kursprojekt: bevorzugt lokale Datei unter data/.
+caldern_file <- here::here("data", "caldern_wiese_2017-06-30.csv")
+
+# Fallback: mit fieldClim ausgelieferter Beispieldatensatz.
+if (!file.exists(caldern_file)) {
+  caldern_file <- system.file(
+    "extdata",
+    "caldern_wiese_2017-06-30.csv",
+    package = "fieldClim"
+  )
+}
+
+stopifnot(file.exists(caldern_file))
+
+caldern <- read.csv(
+  caldern_file,
+  na.strings = c("NULL", "NA", "")
+)
+
+caldern$datetime <- as.POSIXct(
+  caldern$datetime,
+  format = "%Y-%m-%d %H:%M:%S",
+  tz = "Europe/Berlin"
+)
+```
+
+# Kurzwellige Strahlung und Albedo
+
+Die kurzwellige Bilanz beschreibt, wie viel einfallende Sonnenstrahlung nach Reflexion an der Oberfläche verbleibt.
+
+$$
+K^* = K_\downarrow - K_\uparrow
+$$
+
+Die Albedo ist der reflektierte Anteil der einfallenden kurzwelligen Strahlung. Sie wird nur bei ausreichender Einstrahlung berechnet, weil Quotienten bei Dunkelheit oder sehr schwacher Strahlung instabil werden.
+
+```{r shortwave-check}
+caldern$K_down <- caldern$rad_sw_in
+caldern$K_up <- caldern$rad_sw_out
+caldern$K_star <- caldern$K_down - caldern$K_up
+
+caldern$albedo <- NA_real_
+valid_rad <- is.finite(caldern$K_down) & caldern$K_down > 50
+caldern$albedo[valid_rad] <- caldern$K_up[valid_rad] / caldern$K_down[valid_rad]
+
+summary(caldern[, c("K_down", "K_up", "K_star", "albedo")])
+```
+
+```{r shortwave-plot, fig.width=8, fig.height=6}
+op <- par(mfrow = c(3, 1), mar = c(3.5, 4, 2, 1))
+
+plot(caldern$datetime, caldern$K_down, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Einfallende kurzwellige Strahlung")
+
+plot(caldern$datetime, caldern$K_up, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Reflektierte kurzwellige Strahlung")
+
+plot(caldern$datetime, caldern$albedo, type = "p", pch = 16,
+     xlab = "Zeit", ylab = "-", main = "Albedo bei ausreichender Einstrahlung")
+
+par(op)
+```
+
+Der Plot soll nicht nur schön aussehen. Er beantwortet eine Arbeitsfrage: Verhält sich die kurzwellige Strahlung wie ein Tagesgang? Wenn die einfallende Strahlung nachts hohe Werte zeigt oder die Albedo unrealistisch springt, ist die weitere Energiebilanzrechnung gefährdet.
+
+# Langwellige Bilanz und Netto-Strahlung
+
+Die langwellige Bilanz wird hier als Differenz aus atmosphärischer Gegenstrahlung und langwelliger Ausstrahlung der Oberfläche gelesen.
+
+$$
+L^* = L_\downarrow - L_\uparrow
+$$
+
+Das Symbol `L` meint hier langwellige Strahlung. Es ist nicht der fühlbare Wärmestrom. Dieser wird in der Referenznotation als `H` bezeichnet. Diese Trennung verhindert die häufige Verwechslung zwischen longwave radiation und sensible heat.
+
+```{r longwave-and-net}
+caldern$L_down <- caldern$LDnCo
+caldern$L_up <- caldern$LUpCo
+caldern$L_star <- caldern$L_down - caldern$L_up
+
+caldern$Q_star_components <- caldern$K_star + caldern$L_star
+caldern$Q_star_netcols <- caldern$RsNet + caldern$RlNet
+caldern$Q_star_measured <- caldern$rad_net
+
+q_check <- data.frame(
+  comparison = c("RsNet + RlNet - rad_net", "K* + L* - rad_net"),
+  mean_deviation = c(
+    mean(caldern$Q_star_netcols - caldern$Q_star_measured, na.rm = TRUE),
+    mean(caldern$Q_star_components - caldern$Q_star_measured, na.rm = TRUE)
+  ),
+  max_abs_deviation = c(
+    max(abs(caldern$Q_star_netcols - caldern$Q_star_measured), na.rm = TRUE),
+    max(abs(caldern$Q_star_components - caldern$Q_star_measured), na.rm = TRUE)
+  )
+)
+
+q_check[, -1] <- round(q_check[, -1], 1)
+q_check
+```
+
+```{r net-radiation-plot, fig.width=8, fig.height=5}
+plot(caldern$datetime, caldern$Q_star_measured, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Netto-Strahlung: Messspalte und Kontrollrechnung")
+lines(caldern$datetime, caldern$Q_star_netcols, lty = 2)
+legend("bottomleft", legend = c("rad_net", "RsNet + RlNet"),
+       lty = c(1, 2), bty = "n")
+```
+
+Eine Abweichung zwischen den Varianten ist nicht automatisch ein Fehler. Sie kann auf unterschiedliche Korrekturen, Vorzeichenkonventionen, Sensorverarbeitung oder Zeitversatz hinweisen. Für die weitere Arbeit muss aber eine Arbeitsreihe festgelegt werden. Im Kurs verwenden wir `rad_net` als `Q_star` und behalten die anderen Reihen als Diagnosegrößen.
+
+```{r define-qstar}
+caldern$Q_star <- caldern$Q_star_measured
+```
+
+# Zeitversatz prüfen
+
+Ein Versatz von einem 5-Minuten-Schritt kann Strahlungsprüfungen stark verschlechtern. Deshalb lohnt ein einfacher Vergleich ohne Versatz, mit einem Schritt nach vorne und mit einem Schritt nach hinten.
+
+```{r lag-check}
+diff_0 <- mean(abs(caldern$Q_star_components - caldern$Q_star_measured), na.rm = TRUE)
+
+diff_plus <- mean(abs(
+  caldern$Q_star_components[-1] -
+    caldern$Q_star_measured[-length(caldern$Q_star_measured)]
+), na.rm = TRUE)
+
+diff_minus <- mean(abs(
+  caldern$Q_star_components[-length(caldern$Q_star_components)] -
+    caldern$Q_star_measured[-1]
+), na.rm = TRUE)
+
+lag_check <- data.frame(
+  comparison = c("ohne Versatz", "Komponenten +1 Schritt", "Komponenten -1 Schritt"),
+  mean_absolute_deviation = round(c(diff_0, diff_plus, diff_minus), 1)
+)
+
+lag_check
+```
+
+Wenn eine verschobene Variante deutlich besser wird, ist ein Zeit- oder Aggregationsproblem wahrscheinlich. Wenn nicht, geht es eher um Spaltendefinitionen, Korrekturstufen oder Vorzeichen.
+
+# Bodenwärmestrom und verfügbare Energie
+
+Der Bodenwärmestrom ist in `fieldClim` positiv, wenn Energie in den Boden geht. Für die verfügbare Energie wird er von der Netto-Strahlung abgezogen.
+
+$$
+A = Q^* - B
+$$
+
+```{r soil-and-available-energy}
+caldern$B <- caldern$heatflux_soil
+caldern$available_energy <- caldern$Q_star - caldern$B
+
+summary(caldern[, c("Q_star", "B", "available_energy")])
+```
+
+```{r available-energy-plot, fig.width=8, fig.height=6}
+op <- par(mfrow = c(2, 1), mar = c(3.5, 4, 2, 1))
+
+plot(caldern$datetime, caldern$Q_star, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Q*: Netto-Strahlung")
+lines(caldern$datetime, caldern$B, lty = 2)
+legend("bottomleft", legend = c("Q*", "B"), lty = c(1, 2), bty = "n")
+
+plot(caldern$datetime, caldern$available_energy, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "A = Q* - B")
+abline(h = 0, lty = 2, col = "grey50")
+
+par(op)
+```
+
+Diese Kurve ist die Brücke zur nächsten Einheit. Sie zeigt, welche Energie im Tagesgang überhaupt für turbulente Flüsse und Residualterme zur Verfügung steht. Wenn `Q_star` oder `B` falsch gelesen werden, wird jede spätere Methode formal sauber rechnen, aber mit einer falschen Energiegrundlage.
+
+# Paketfunktion als Kontrolle
+
+Die manuelle Prüfung steht im Vordergrund. Trotzdem kann `fieldClim` auch direkt Bodenwärmestrom aus Bodenparametern und Temperaturgradienten berechnen. Das ist ein Rechenszenario, kein automatischer Ersatz für die gemessene Spalte.
+
+```{r build-weather-station}
+ws <- build_weather_station(
+  datetime = caldern$datetime,
+  lon = 8.6832,
+  lat = 50.8405,
+  elev = 261,
+
+  temp = caldern$Ta_2m,
+  rh = caldern$Huma_2m,
+
+  t1 = caldern$Ta_2m,
+  t2 = caldern$Ta_10m,
+  hum1 = caldern$Huma_2m,
+  hum2 = caldern$Huma_10m,
+
+  v1 = caldern$Windspeed_2m,
+  v2 = caldern$Windspeed_10m,
+  z1 = 2,
+  z2 = 10,
+
+  rad_bal = caldern$rad_net,
+  soil_flux = caldern$heatflux_soil,
+
+  slope = 0,
+  exposition = 0,
+  valley = FALSE,
+  surface_type = "field",
+  surface_temp = caldern$Ts,
+
+  texture = "peat",
+  moisture = caldern$water_vol_soil,
+  soil_temp1 = caldern$Ts,
+  soil_temp2 = caldern$Ta_2m,
+  soil_depth1 = 0.25,
+  soil_depth2 = 0,
+  obs_height = 2
+)
+```
+
+```{r soil-package-check}
+caldern$B_model <- soil_heat_flux(ws)
+summary(caldern$B_model - caldern$B)
+```
+
+```{r soil-package-plot, fig.width=8, fig.height=4}
+plot(caldern$datetime, caldern$B, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Bodenwärmestrom: gemessen und modelliert")
+lines(caldern$datetime, caldern$B_model, lty = 2)
+legend("bottomleft", legend = c("gemessen", "aus Bodenparametern"),
+       lty = c(1, 2), bty = "n")
+```
+
+Der Unterschied zwischen beiden Reihen ist kein Schönheitsfehler. Er zeigt, dass Messplatte, Temperaturgradient, Bodentextur und Feuchte unterschiedliche Zugriffspunkte auf denselben Prozess sind. Für den weiteren Standardworkflow bleibt die gemessene Spalte `heatflux_soil` die Arbeitsgröße.
+
+::: {.callout-tip title="Arbeitsauftrag"}
+Legen Sie eine Arbeitsreihe für `Q_star` und `B` fest. Dokumentieren Sie, welche Alternativen Sie geprüft haben und warum Sie diese nicht still überschreiben. Die spätere Methodenwahl ist nur so gut wie diese Eingangsentscheidung.
+:::

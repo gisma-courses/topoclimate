@@ -1,0 +1,82 @@
+project:
+  type: website
+  output-dir: docs/
+  render:
+    - "*.qmd"
+    - "unit01/*.qmd"
+    - "slides/*.qmd"
+website:
+  favicon: /images/logo.png
+  bread-crumbs: false
+  open-graph: true
+  page-navigation: true
+  title: "Geländeklimatologie"
+  site-url: https://gisma-courses.github.io/topoclimate
+  repo-url: https://github.com/gisma-courses/topoclimate
+  repo-actions: [edit, issue]
+  repo-branch: master
+  search:
+    location: navbar
+    type: textbox
+  twitter-card:
+    creator: "@gisma"
+  comments: false
+
+  # navbar:
+  #   logo: /images/logo.png
+  #   right:
+  #     - text: "Formales"
+  #       menu:
+  #         - icon: exclamation-square-fill
+  #           href: unit00/unit00-02-formales.qmd
+  #         - icon: clipboard-check
+  #           href: unit00/unit00-03-formales.qmd
+  #         - icon: map
+  #           href: unit00/unit00-04-themen.qmd
+
+sidebar:
+  contents:
+    - text: "Start"
+      href: index.qmd
+    - section: "Sitzungen"
+      contents:
+        - text: "L01 Datenbasis und Station"
+          href: unit01/L01_fieldclim_datenbasis_und_station.qmd
+        - text: "L02 Strahlung und Bodenwärmestrom"
+          href: unit01/L02_strahlung_bodenwaermestrom_datenpruefung.qmd
+        - text: "L03 weather_station-Objekt"
+          href: unit01/L03_weather_station_objekt_und_basisworkflow.qmd
+        - text: "L04 Wärmeflussmethoden"
+          href: unit01/L04_waermeflussmethoden_mit_fieldclim.qmd
+
+        - text: "---"
+        - text: "---"
+        # - section: Foliensätze zu den Readern
+        #   contents:
+        #     - href: slides/unit01_1.qmd
+
+
+execute:
+  freeze: auto
+  echo: false
+  message: false
+  warning: false
+  cache: false
+
+format:
+  html:
+    include-after-body: css/banner-footer.html
+    include-in-header: css/banner-style.html
+    code-overflow: wrap
+    toc-title: "Inhalt"
+    number-sections: false
+    highlight-style: github
+    theme:
+      light: cerulean
+      dark: [lumen, css/theme-dark.scss]
+    code-copy: true
+    css: css/styles.css
+    toc: true
+    link-external-icon: false
+    link-external-newwindow: true
+    link-external-filter: '^(?:http:|https:)\/\/www\.quarto\.org\/custom'
