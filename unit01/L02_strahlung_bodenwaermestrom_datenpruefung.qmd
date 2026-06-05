@@ -1,6 +1,6 @@
 ---
 title: "Strahlung und Bodenwärmestrom prüfen"
-title-block-banner: ../images/splash_L02_1.png
+title-block-banner: ../images/splash_L02.png
 title-block-banner-color: black
 bibliography: ../assets/geoinfo.bib
 lang: de

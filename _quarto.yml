@@ -2,9 +2,9 @@ project:
   type: website
   output-dir: docs/
   render:
-    - "*.qmd"
+    - "index.qmd"
     - "unit01/*.qmd"
-    - "slides/*.qmd"
+    - "slides/perfekter_gipfel_gesamtrahmen.qmd"
 website:
   favicon: /images/logo.png
   bread-crumbs: false
@@ -34,26 +34,24 @@ website:
   #         - icon: map
   #           href: unit00/unit00-04-themen.qmd
 
-sidebar:
-  contents:
-    - text: "Start"
-      href: index.qmd
-    - section: "Sitzungen"
-      contents:
-        - text: "L01 Datenbasis und Station"
-          href: unit01/L01_fieldclim_datenbasis_und_station.qmd
-        - text: "L02 Strahlung und Bodenwärmestrom"
-          href: unit01/L02_strahlung_bodenwaermestrom_datenpruefung.qmd
-        - text: "L03 weather_station-Objekt"
-          href: unit01/L03_weather_station_objekt_und_basisworkflow.qmd
-        - text: "L04 Wärmeflussmethoden"
-          href: unit01/L04_waermeflussmethoden_mit_fieldclim.qmd
-
-        - text: "---"
-        - text: "---"
-        # - section: Foliensätze zu den Readern
-        #   contents:
-        #     - href: slides/unit01_1.qmd
+  sidebar:
+    contents:
+      - text: "Start"
+        href: index.qmd
+      - section: "Sitzungen"
+        contents:
+          - text: "L01 Datenbasis und Station"
+            href: unit01/L01_fieldclim_datenbasis_und_station.qmd
+          - text: "L02 Strahlung und Bodenwärmestrom"
+            href: unit01/L02_strahlung_bodenwaermestrom_datenpruefung.qmd
+          - text: "L03 weather_station-Objekt"
+            href: unit01/L03_weather_station_objekt_und_basisworkflow.qmd
+          - text: "L04 Wärmeflussmethoden"
+            href: unit01/L04_waermeflussmethoden_mit_fieldclim.qmd
+      - section: "Foliensätze zu den Readern"
+        contents:
+          - text: "Der perfekte Gipfel"
+            href: slides/perfekter_gipfel_gesamtrahmen.qmd
 
 
 execute:
