@@ -3,7 +3,7 @@ name: Render Quarto site
 on:
   push:
     branches:
-      - main
+      - master
     paths-ignore:
       - "docs/**"
 
@@ -29,9 +29,12 @@ jobs:
           use-public-rspm: true
 
       - name: Install R packages
+        env:
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          Rscript -e 'install.packages(c("knitr", "rmarkdown", "here"))'
-          Rscript -e 'if (!requireNamespace("fieldClim", quietly = TRUE)) install.packages("fieldClim")'
+          Rscript -e 'install.packages("pak", repos = "https://cloud.r-project.org")'
+          Rscript -e 'pak::pak(c("knitr", "rmarkdown", "here"))'
+          Rscript -e 'pak::pak("https://github.com/gisma/migration-fieldclim.git")'
 
       - name: Render site
         run: quarto render
