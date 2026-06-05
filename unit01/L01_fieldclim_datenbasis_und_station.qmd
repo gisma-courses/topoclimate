@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 
 # Ziel dieser Kurseinheit
 
+
 Die theoretischen Grundlagen zu Geländeklima, Mikroklima und Energieflüssen sind im Kurs bereits behandelt. Diese Einheit setzt deshalb nicht erneut bei der Theorie an. Sie zeigt, wie eine reale Stationsdatei so gelesen wird, dass sie als Arbeitsgrundlage für `fieldClim` nutzbar wird.
 
 Die zentrale Übersetzung lautet: Aus einem Messstandort wird in R zunächst eine Tabelle. Aus der Tabelle wird anschließend ein fachlich geordnetes Stationsobjekt. Erst dieses Objekt macht die weitere Paketlogik stabil, weil Zeitachse, Messhöhen, Standort, Strahlung, Bodenwärmestrom und Oberflächenannahmen gemeinsam weitergegeben werden.
