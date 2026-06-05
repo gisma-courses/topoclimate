@@ -3,7 +3,7 @@ name: Render Quarto site
 on:
   push:
     branches:
-      - master
+      - main
     paths-ignore:
       - "docs/**"
 
@@ -28,6 +28,26 @@ jobs:
         with:
           use-public-rspm: true
 
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libcurl4-openssl-dev \
+            libssl-dev \
+            libxml2-dev \
+            libgdal-dev \
+            libgeos-dev \
+            libproj-dev \
+            libudunits2-dev \
+            libfontconfig1-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libfreetype6-dev \
+            libpng-dev \
+            libjpeg-dev \
+            libtiff5-dev
+
       - name: Install R packages
         env:
           GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -36,7 +56,7 @@ jobs:
           Rscript -e 'pak::pak(c("knitr", "rmarkdown", "here"))'
           Rscript -e 'pak::pak("https://github.com/gisma/migration-fieldclim.git")'
 
-      - name: Render site
+      - name: Render Quarto site
         run: quarto render
 
       - name: Commit rendered docs
