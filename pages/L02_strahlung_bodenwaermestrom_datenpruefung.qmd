@@ -22,7 +22,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```
 ::: {.callout-note title="Quellcode"}
 Der komplette R-Code dieser Lektion wird im gerenderten Dokument sichtbar angezeigt. Zusätzlich steht der extrahierte und ausführlich kommentierte R-Code als Datei bereit: [`L02_strahlung_bodenwaermestrom_datenpruefung.R`](../assets/scripts/L02_strahlung_bodenwaermestrom_datenpruefung.R).
 :::
