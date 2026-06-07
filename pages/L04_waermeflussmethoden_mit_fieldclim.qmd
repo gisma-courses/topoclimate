@@ -1,6 +1,6 @@
 ---
 title: "Wärmeflussmethoden mit fieldClim"
-title-block-banner: ../images/splash_L04.png
+title-block-banner: ../images/splash.png
 title-block-banner-color: black
 bibliography: ../assets/geoinfo.bib
 lang: de

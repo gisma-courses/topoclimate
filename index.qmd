@@ -7,7 +7,7 @@ twitter-card:
   description: "Geländeklima, Mikroklima und fieldClim"
   image: images/splash_L01_1.png
   
-title-block-banner: images/splash_L01_1.png
+
 title-block-banner-color: black
 
 format:
@@ -15,7 +15,7 @@ format:
     css: css/styles.css
 ---
 
-
+![](images/title.png)
 Geländeklima beschreibt die kleinräumige Differenzierung von Klima durch Relief, Oberflächen, Vegetation, Bodenfeuchte und Landnutzung. Es ist der Bereich, in dem atmosphärische Prozesse unmittelbar mit konkreten Landschaften verbunden werden: mit Hängen und Mulden, Wald und Wiese, versiegelten und unversiegelten Flächen, Schatten, Strahlung, Wind und Wasserverfügbarkeit.
 
 Der Kurs setzt dort an, wo allgemeine Klimatheorie in angewandte Analyse übersetzt wird. Im Mittelpunkt steht nicht die Wiederholung meteorologischer Grundlagen, sondern die Frage, wie Messdaten aus konkreten Standorten so geprüft, strukturiert und ausgewertet werden können, dass daraus nachvollziehbare Aussagen über lokale Energieflüsse und mikroklimatische Unterschiede entstehen.
