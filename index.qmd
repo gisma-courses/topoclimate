@@ -1,6 +1,6 @@
 ---
 title: "Geländeklimatologie"
-author: "Jörg Bendix, Chris Reudenbach"
+author: "Jörg Bendix & Chris Reudenbach"
 open-graph:
   description: "Geländeklima, Mikroklima und fieldClim"
   image: images/splash_L01_1.png
