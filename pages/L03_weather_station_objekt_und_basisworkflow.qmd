@@ -315,10 +315,10 @@ plot(ws_table$datetime, ws_table$temp, type = "l",
 source("../assets/scripts/read_cr1000_to_fieldclim.R")
 
 ws <- read_cr1000_to_fieldclim(
-  file = "../data/CR1000_Table1_26Mar.dat",
-  lon = -0,          # Stations-Lon  ersetzen
-  lat = -0,           # Stations-Lat ersetzen
-  elev = 0,           # Stations-Höhe ersetzen
+  file = "../data/myCampbellfile #CR1000_Table1_26Mar.dat",
+  lon = -0,                      # Stations-Lon  ersetzen
+  lat = -0,                      # Stations-Lat ersetzen
+  elev = 0,                      # Stations-Höhe ersetzen
   tz = "America/Guayaquil",
   z1 = 2,
   z2 = 10,
