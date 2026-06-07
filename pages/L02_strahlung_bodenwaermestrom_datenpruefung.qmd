@@ -1,5 +1,6 @@
 ---
 title: "Strahlung und Bodenwärmestrom prüfen"
+author: "Jörg Bendix, Chris Reudenbach"
 title-block-banner: ../images/splash.png
 title-block-banner-color: black
 bibliography: ../assets/geoinfo.bib

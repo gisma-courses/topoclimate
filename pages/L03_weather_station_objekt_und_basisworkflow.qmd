@@ -1,5 +1,6 @@
 ---
-title: "weather_station-Objekt und Basisworkflow"
+title: "Weather_Station-Objekt und Basisworkflow"
+author: "Jörg Bendix, Chris Reudenbach"
 title-block-banner: ../images/splash.png
 title-block-banner-color: black
 bibliography: ../assets/geoinfo.bib
