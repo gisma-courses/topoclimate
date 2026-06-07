@@ -1,0 +1,215 @@
+---
+title: "fieldClim: Datenbasis und Station"
+title-block-banner: ../images/splash_L01_1.png
+title-block-banner-color: black
+bibliography: ../assets/geoinfo.bib
+lang: de
+comments: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  include = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+::: {.callout-note title="Quellcode"}
+Der komplette R-Code dieser Lektion wird im gerenderten Dokument sichtbar angezeigt. Zusätzlich steht der extrahierte und ausführlich kommentierte R-Code als Datei bereit: [`L01_fieldclim_datenbasis_und_station.R`](../assets/scripts/L01_fieldclim_datenbasis_und_station.R).
+:::
+
+
+# Ziel dieser Kurseinheit
+
+
+Die theoretischen Grundlagen zu Geländeklima, Mikroklima und Energieflüssen sind im Kurs bereits behandelt. Diese Einheit setzt deshalb nicht erneut bei der Theorie an. Sie zeigt, wie eine reale Stationsdatei so gelesen wird, dass sie als Arbeitsgrundlage für `fieldClim` nutzbar wird.
+
+Die zentrale Übersetzung lautet: Aus einem Messstandort wird in R zunächst eine Tabelle. Aus der Tabelle wird anschließend ein fachlich geordnetes Stationsobjekt. Erst dieses Objekt macht die weitere Paketlogik stabil, weil Zeitachse, Messhöhen, Standort, Strahlung, Bodenwärmestrom und Oberflächenannahmen gemeinsam weitergegeben werden.
+
+::: {.callout-note title="Arbeitsprinzip in R"}
+Der Code bleibt absichtlich einfach. Wir verwenden `read.csv()`, direkte Spaltenzugriffe mit `$`, kleine `data.frame()`-Tabellen und base-R-Plots. Das Ziel ist nicht ein eleganter R-Stil, sondern eine nachvollziehbare Übersetzung von Stationsdaten in `fieldClim`-Berechnungen. Pfade laufen über `here::here()`. Wenn die Kursdatei `data/caldern_wiese_2017-06-30.csv` nicht vorhanden ist, nutzt der Code als Fallback die mit dem Paket ausgelieferte Beispieldatei.
+:::
+
+# Vom Gelände zur Tabelle
+
+Eine Klimastation misst keine Theorie. Sie schreibt Zeitpunkte und Sensorwerte in Spalten. Die Anwendung beginnt deshalb nicht mit der Frage, welche Formel am Ende verwendet wird, sondern mit der Frage, ob die Messdatei als Zeitreihe überhaupt sauber lesbar ist.
+
+Im Caldern-Beispiel geht es um einen vollständigen 5-Minuten-Tag auf einer Wiese. Ein vollständiger Tag mit 5-Minuten-Zeitschritten hat 288 Werte. Diese Zahl ist nicht nur Buchhaltung. Sie ist ein erster Test, ob spätere Tagesgänge und Energieflüsse zeitlich sinnvoll interpretiert werden können.
+
+```{r load-packages-and-data}
+library(fieldClim)
+library(here)
+
+# Kursprojekt: bevorzugt lokale Datei unter data/.
+caldern_file <- here::here("data", "caldern_wiese_2017-06-30.csv")
+
+# Fallback: mit fieldClim ausgelieferter Beispieldatensatz.
+if (!file.exists(caldern_file)) {
+  caldern_file <- system.file(
+    "extdata",
+    "caldern_wiese_2017-06-30.csv",
+    package = "fieldClim"
+  )
+}
+
+stopifnot(file.exists(caldern_file))
+
+caldern <- read.csv(
+  caldern_file,
+  na.strings = c("NULL", "NA", "")
+)
+
+caldern$datetime <- as.POSIXct(
+  caldern$datetime,
+  format = "%Y-%m-%d %H:%M:%S",
+  tz = "Europe/Berlin"
+)
+```
+
+# Erste Kontrolle
+
+Der erste R-Schritt ist schlicht: Zeilenzahl, Zeitraum, Zeitschritt und Spaltennamen prüfen. Diese vier Ausgaben reichen oft schon aus, um grobe Probleme zu erkennen. Wenn Zeitstempel nicht als Datum-Zeit-Objekt vorliegen oder der Zeitschritt springt, können Strahlungs- und Tagesganginterpretationen falsch werden.
+
+```{r first-checks}
+nrow(caldern)
+range(caldern$datetime)
+summary(diff(caldern$datetime))
+names(caldern)
+```
+
+Die Ausgabe wird nicht als formaler Bericht gelesen. Sie dient als Arbeitskontrolle: Gibt es den erwarteten Tag? Ist die Zeitachse gleichmäßig? Sind die Spalten vorhanden, die später für `fieldClim` gebraucht werden?
+
+# Messgrößen als Rollen lesen
+
+Die Stationsspalten sind zunächst technische Namen. Für den Workflow müssen sie fachlich gelesen werden. `Ta_2m` ist Lufttemperatur in zwei Metern Höhe. `Ta_10m` ist die zweite Temperaturhöhe. `Huma_2m` und `Huma_10m` bilden das Feuchteprofil. `Windspeed_2m` und `Windspeed_10m` bilden das Windprofil. `rad_net` steht als Arbeitsgröße für Netto-Strahlung. `heatflux_soil` steht für Bodenwärmestrom.
+
+Die folgende kleine Tabelle ist bewusst handgemacht. Sie zeigt, wie man aus vielen Spalten eine kontrollierte Auswahl erzeugt, ohne sofort in Paketfunktionen zu springen.
+
+```{r selected-columns}
+selected <- caldern[, c(
+  "datetime",
+  "Ta_2m", "Ta_10m",
+  "Huma_2m", "Huma_10m",
+  "Windspeed_2m", "Windspeed_10m",
+  "rad_net", "heatflux_soil"
+)]
+
+head(selected)
+summary(selected[, -1])
+```
+
+# Ein erster Tagesgang
+
+Bevor ein Paketworkflow gestartet wird, muss man die Messreihe sehen. Ein Plot zeigt nicht die Wahrheit, aber er zeigt, ob die Größenordnung und der Tagesgang plausibel sind. Für den Einstieg reicht base R.
+
+```{r first-base-plot, fig.width=8, fig.height=6}
+op <- par(mfrow = c(3, 1), mar = c(3.5, 4, 2, 1))
+
+plot(
+  caldern$datetime, caldern$Ta_2m,
+  type = "l",
+  xlab = "Zeit",
+  ylab = "°C",
+  main = "Lufttemperatur in 2 m"
+)
+
+plot(
+  caldern$datetime, caldern$rad_net,
+  type = "l",
+  xlab = "Zeit",
+  ylab = "W m-2",
+  main = "Netto-Strahlung"
+)
+
+plot(
+  caldern$datetime, caldern$heatflux_soil,
+  type = "l",
+  xlab = "Zeit",
+  ylab = "W m-2",
+  main = "Bodenwärmestrom"
+)
+
+par(op)
+```
+
+Diese drei Kurven verbinden den bekannten Theoriehintergrund mit der Datenanwendung. Temperatur beschreibt den lokalen Zustand der bodennahen Luft. Netto-Strahlung beschreibt den radiativen Antrieb. Bodenwärmestrom beschreibt den Anteil, der in den Boden geht oder aus ihm kommt. Für Wärmeflussmethoden ist die Kombination entscheidend.
+
+# Das `weather_station`-Objekt
+
+`fieldClim` arbeitet nicht nur mit losen Vektoren. Der zentrale Arbeitsschritt ist das `weather_station`-Objekt. Es bündelt die Messgrößen mit Standort- und Modellannahmen. Dadurch kann dieselbe Station an Strahlungsfunktionen, Bodenfunktionen, Stabilitätsdiagnosen und Wärmeflussmethoden übergeben werden.
+
+```{r build-weather-station}
+ws <- build_weather_station(
+  datetime = caldern$datetime,
+  lon = 8.6832,
+  lat = 50.8405,
+  elev = 261,
+
+  temp = caldern$Ta_2m,
+  rh = caldern$Huma_2m,
+
+  t1 = caldern$Ta_2m,
+  t2 = caldern$Ta_10m,
+  hum1 = caldern$Huma_2m,
+  hum2 = caldern$Huma_10m,
+
+  v1 = caldern$Windspeed_2m,
+  v2 = caldern$Windspeed_10m,
+  z1 = 2,
+  z2 = 10,
+
+  rad_bal = caldern$rad_net,
+  soil_flux = caldern$heatflux_soil,
+
+  slope = 0,
+  exposition = 0,
+  valley = FALSE,
+  surface_type = "field",
+  surface_temp = caldern$Ts,
+
+  texture = "peat",
+  moisture = caldern$water_vol_soil,
+  soil_temp1 = caldern$Ts,
+  soil_temp2 = caldern$Ta_2m,
+  soil_depth1 = 0.25,
+  soil_depth2 = 0,
+  obs_height = 2
+)
+```
+
+```{r inspect-basic-object}
+class(ws)
+names(ws)
+head(as.data.frame(ws))
+```
+
+Das Objekt ist mehr als eine umbenannte Tabelle. Es ordnet Spalten in Rollen ein. `rad_bal` ist die Paketgröße für `Q_star`. `soil_flux` ist der Bodenwärmestrom. `t1`, `t2`, `hum1`, `hum2`, `v1` und `v2` sind keine beliebigen Spalten, sondern bilden ein Vertikalprofil. Diese Rollenzuweisung ist der Übergang von Datenverwaltung zu Modellanwendung.
+
+# Default-Methode und Objektmethode
+
+Viele Funktionen können einzeln mit Argumenten oder direkt mit einem `weather_station`-Objekt aufgerufen werden. Der direkte Aufruf ist nützlich, um eine Formel oder eine Einzelgröße zu testen. Die Objektmethode ist nützlich, wenn mehrere Funktionen dieselbe Station konsistent verwenden sollen.
+
+```{r default-vs-object}
+# Einzeltest mit expliziten Argumenten.
+pres_p(elev = 261, temp = 20)
+
+# Objektmethode: die Funktion liest die relevanten Felder aus ws.
+pres_p(ws)
+```
+
+Der Unterschied ist für die weitere Arbeit wichtig. Wer alle Argumente einzeln übergibt, sieht sehr genau, was in die Funktion hineingeht. Wer das Objekt nutzt, reduziert Wiederholungen und vermeidet, dass in späteren Schritten versehentlich unterschiedliche Standort- oder Höhenannahmen verwendet werden.
+
+# Was diese Einheit sichern soll
+
+Am Ende dieser Einheit sollten die Studierenden drei Dinge können. Sie sollen eine Stationsdatei mit relativen Pfaden laden, die Zeitstruktur und zentrale Spalten grob prüfen und ein `weather_station`-Objekt bewusst aufbauen. Das ist die minimale Voraussetzung für alle folgenden `fieldClim`-Workflows.
+
+::: {.callout-tip title="Arbeitsauftrag"}
+Öffnen Sie die Stationsdatei, prüfen Sie Zeitbereich und Zeitschritt und bauen Sie anschließend ein eigenes `weather_station`-Objekt. Ändern Sie danach bewusst eine Annahme, zum Beispiel `surface_type`, und notieren Sie, warum diese Änderung später methodisch relevant werden kann.
+:::

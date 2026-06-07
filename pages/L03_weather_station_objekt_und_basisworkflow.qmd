@@ -1,0 +1,312 @@
+---
+title: "weather_station-Objekt und Basisworkflow"
+title-block-banner: ../images/splash_L03.png
+title-block-banner-color: black
+bibliography: ../assets/geoinfo.bib
+lang: de
+comments: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r setup}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  include = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
+)
+```
+::: {.callout-note title="Quellcode"}
+Der komplette R-Code dieser Lektion wird im gerenderten Dokument sichtbar angezeigt. Zusätzlich steht der extrahierte und ausführlich kommentierte R-Code als Datei bereit: [`L03_weather_station_objekt_und_basisworkflow.R`](../assets/scripts/L03_weather_station_objekt_und_basisworkflow.R).
+:::
+
+
+# Ziel dieser Kurseinheit
+
+Diese Einheit stellt `fieldClim` als Arbeitswerkzeug in den Mittelpunkt. Die Theorie ist bekannt, die Datenprüfung ist erfolgt. Jetzt geht es um die eigentliche Paketlogik: Messspalten, Standort, Oberflächenannahmen und Messhöhen werden in ein `weather_station`-Objekt übersetzt und danach mit Paketfunktionen ausgewertet.
+
+Das Objekt ist der Kern des Workflows. Es sorgt dafür, dass Strahlung, Boden, Feuchte, Druck, Temperatur, Windprofil und Stabilitätsdiagnosen dieselbe Datengrundlage verwenden. Genau hier entsteht die praktische Verbindung zwischen Klimastation und Modellanwendung.
+
+::: {.callout-note title="Arbeitsprinzip in R"}
+Der Code bleibt absichtlich einfach. Wir verwenden `read.csv()`, direkte Spaltenzugriffe mit `$`, kleine `data.frame()`-Tabellen und base-R-Plots. Das Ziel ist nicht ein eleganter R-Stil, sondern eine nachvollziehbare Übersetzung von Stationsdaten in `fieldClim`-Berechnungen. Pfade laufen über `here::here()`. Wenn die Kursdatei `data/caldern_wiese_2017-06-30.csv` nicht vorhanden ist, nutzt der Code als Fallback die mit dem Paket ausgelieferte Beispieldatei.
+:::
+
+```{r load-packages-and-data}
+library(fieldClim)
+library(here)
+
+# Kursprojekt: bevorzugt lokale Datei unter data/.
+caldern_file <- here::here("data", "caldern_wiese_2017-06-30.csv")
+
+# Fallback: mit fieldClim ausgelieferter Beispieldatensatz.
+if (!file.exists(caldern_file)) {
+  caldern_file <- system.file(
+    "extdata",
+    "caldern_wiese_2017-06-30.csv",
+    package = "fieldClim"
+  )
+}
+
+stopifnot(file.exists(caldern_file))
+
+caldern <- read.csv(
+  caldern_file,
+  na.strings = c("NULL", "NA", "")
+)
+
+caldern$datetime <- as.POSIXct(
+  caldern$datetime,
+  format = "%Y-%m-%d %H:%M:%S",
+  tz = "Europe/Berlin"
+)
+```
+
+# Arbeitsgrößen vorbereiten
+
+Wir übernehmen in dieser Einheit die Arbeitsentscheidung aus der Datenprüfung: `rad_net` wird als `Q_star` verwendet und `heatflux_soil` als `B`. Die Alternativen aus den Strahlungskomponenten bleiben Diagnosegrößen, aber sie ersetzen nicht still die Messspalte.
+
+```{r prepare-working-variables}
+caldern$Q_star <- caldern$rad_net
+caldern$B <- caldern$heatflux_soil
+caldern$A <- caldern$Q_star - caldern$B
+
+summary(caldern[, c("Q_star", "B", "A")])
+```
+
+# Das Stationsobjekt bauen
+
+Der folgende Chunk ist der wichtigste technische Schritt. Er ist bewusst ausgeschrieben. Man soll sehen, welche Messspalte welche Rolle bekommt. Für eine Lehreinheit ist das besser als eine stark verkürzte Hilfsfunktion, weil genau in dieser Zuordnung die meisten fachlichen Fehler entstehen.
+
+```{r build-weather-station}
+ws <- build_weather_station(
+  datetime = caldern$datetime,
+  lon = 8.6832,
+  lat = 50.8405,
+  elev = 261,
+
+  temp = caldern$Ta_2m,
+  rh = caldern$Huma_2m,
+
+  t1 = caldern$Ta_2m,
+  t2 = caldern$Ta_10m,
+  hum1 = caldern$Huma_2m,
+  hum2 = caldern$Huma_10m,
+
+  v1 = caldern$Windspeed_2m,
+  v2 = caldern$Windspeed_10m,
+  z1 = 2,
+  z2 = 10,
+
+  rad_bal = caldern$rad_net,
+  soil_flux = caldern$heatflux_soil,
+
+  slope = 0,
+  exposition = 0,
+  valley = FALSE,
+  surface_type = "field",
+  surface_temp = caldern$Ts,
+
+  texture = "peat",
+  moisture = caldern$water_vol_soil,
+  soil_temp1 = caldern$Ts,
+  soil_temp2 = caldern$Ta_2m,
+  soil_depth1 = 0.25,
+  soil_depth2 = 0,
+  obs_height = 2
+)
+```
+
+```{r object-content}
+class(ws)
+names(ws)
+head(as.data.frame(ws))
+```
+
+Das Objekt trägt zwei Arten von Information. Erstens enthält es Messwerte: Temperatur, Feuchte, Wind, Strahlung, Bodenwärmestrom. Zweitens enthält es Annahmen: Oberflächentyp, Messhöhen, Standort, Hangneigung, Exposition, Bodenart und Beobachtungshöhe. Beide Gruppen sind methodisch relevant.
+
+# Eingaben inspizieren
+
+Bevor Wärmeflussmethoden laufen, muss geprüft werden, welche Eingaben vollständig vorhanden sind. `inspect_weather_station_inputs()` repariert keine Daten. Die Funktion meldet, welche Felder vorhanden sind, wo Lücken liegen und welche Methodenfamilien aus Eingabesicht bereit sind.
+
+```{r inspect-weather-station}
+inspection <- inspect_weather_station_inputs(ws)
+
+names(inspection)
+inspection$summary
+
+subset(
+  inspection$fields,
+  source_status != "present"
+)
+
+inspection$method_readiness[, c(
+  "method",
+  "missing_fields",
+  "partial_fields",
+  "ready",
+  "notes"
+)]
+```
+
+Die Funktion ist ein Kontrollpunkt, keine Freigabe. Wenn eine Methode „ready“ ist, bedeutet das: Die benötigten Felder sind strukturell vorhanden. Es bedeutet nicht automatisch, dass jeder Zeitschritt meteorologisch gut konditioniert ist. Das wird erst durch Stabilitäts- und Ergebnisdiagnosen sichtbar.
+
+# Modellierte Strahlung als Plausibilitätsmaßstab
+
+`fieldClim` enthält Funktionen, um Strahlung aus Zeit, Standort, Gelände und Oberflächenannahmen zu modellieren. In dieser Kurseinheit wird das nicht als Ersatzmessung eingeführt. Modellierte Strahlung ist hier ein Plausibilitätsmaßstab: Stimmen Tagesgang und Größenordnung ungefähr, oder deutet etwas auf Zeitzone, Spaltendefinition oder falsche Annahmen hin?
+
+```{r modeled-radiation}
+lon <- 8.6832
+lat <- 50.8405
+elev <- 261
+slope <- 0
+exposition <- 0
+valley <- FALSE
+surface_type <- "field"
+
+caldern$K_down_model <- rad_sw_in(
+  caldern$datetime,
+  lon, lat, elev, caldern$Ta_2m,
+  slope, exposition
+)
+
+caldern$Q_star_model <- rad_bal(
+  caldern$datetime, lon, lat, elev,
+  caldern$Ta_2m, caldern$Huma_2m,
+  slope, exposition, valley, surface_type,
+  caldern$Ts
+)
+
+summary(caldern[, c("rad_sw_in", "K_down_model", "rad_net", "Q_star_model")])
+```
+
+```{r modeled-radiation-plot, fig.width=8, fig.height=5}
+op <- par(mfrow = c(2, 1), mar = c(3.5, 4, 2, 1))
+
+plot(caldern$datetime, caldern$rad_sw_in, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Kurzwellige Einstrahlung")
+lines(caldern$datetime, caldern$K_down_model, lty = 2)
+legend("topright", legend = c("gemessen", "modelliert"),
+       lty = c(1, 2), bty = "n")
+
+plot(caldern$datetime, caldern$rad_net, type = "l",
+     xlab = "Zeit", ylab = "W m-2", main = "Netto-Strahlung")
+lines(caldern$datetime, caldern$Q_star_model, lty = 2)
+legend("bottomleft", legend = c("gemessen", "modelliert"),
+       lty = c(1, 2), bty = "n")
+
+par(op)
+```
+
+Die modellierte Reihe muss nicht deckungsgleich mit der Messreihe sein. Sie hilft aber, offensichtliche Probleme zu finden. Ein falscher Zeitzonenbezug verschiebt den Tagesgang. Eine falsche Oberflächenannahme verändert langwellige Ausstrahlung und Bilanz. Eine stark abweichende Größenordnung verlangt eine Prüfung der Sensor- oder Spaltendefinition.
+
+# Hilfsgrößen: Feuchte, Dichte, Temperatur
+
+Viele `fieldClim`-Funktionen erzeugen Größen, die nicht als Endergebnis gedacht sind. Absolute Feuchte, potentielle Temperatur, Luftdichte oder Verdampfungswärme sind Zwischenübersetzungen. Sie verbinden Stationsspalten mit späteren Wärmeflussmethoden.
+
+```{r helper-variables}
+caldern$hum_abs <- hum_absolute(caldern$Huma_2m, caldern$Ta_2m)
+caldern$evap_heat <- hum_evap_heat(caldern$Ta_2m)
+caldern$hum_gradient <- hum_moisture_gradient(
+  caldern$Huma_2m,
+  caldern$Huma_10m,
+  caldern$Ta_2m,
+  caldern$Ta_10m,
+  2, 10, 261
+)
+caldern$air_density <- pres_air_density(261, caldern$Ta_2m)
+caldern$theta <- temp_pot_temp(caldern$Ta_2m, 261)
+
+summary(caldern[, c("hum_abs", "evap_heat", "hum_gradient", "air_density", "theta")])
+```
+
+```{r helper-plot, fig.width=8, fig.height=5}
+op <- par(mfrow = c(2, 1), mar = c(3.5, 4, 2, 1))
+
+plot(caldern$datetime, caldern$hum_abs, type = "l",
+     xlab = "Zeit", ylab = "", main = "Absolute Feuchte")
+
+plot(caldern$datetime, caldern$air_density, type = "l",
+     xlab = "Zeit", ylab = "kg m-3", main = "Luftdichte")
+
+par(op)
+```
+
+Die Zwischenvariablen werden nicht isoliert interpretiert. Ihr Wert liegt darin, dass sie spätere Methoden stabiler nachvollziehbar machen. Wenn eine Hilfsgröße falsch skaliert oder lückenhaft ist, taucht das später als scheinbar merkwürdiger Wärmefluss auf.
+
+# Windprofil und Stabilität
+
+Profilmethoden reagieren empfindlich auf Temperaturunterschiede, Feuchteunterschiede, Windgeschwindigkeit und Messhöhen. Deshalb werden Windprofil und Stabilität vor der Methodenrechnung geprüft.
+
+```{r turbulence-screening}
+z0 <- turb_roughness_length("field")
+z0
+
+caldern$u_star <- turb_ustar(caldern$Windspeed_2m, 2, surface_type = "field")
+
+caldern$richardson <- turb_flux_grad_rich_no(
+  caldern$Ta_2m,
+  caldern$Ta_10m,
+  2,
+  10,
+  caldern$Windspeed_2m,
+  caldern$Windspeed_10m,
+  261
+)
+
+caldern$exchange_temp <- turb_flux_ex_quotient_temp(
+  caldern$Ta_2m,
+  caldern$Ta_10m,
+  2,
+  10,
+  caldern$Windspeed_2m,
+  caldern$Windspeed_10m,
+  261,
+  "field"
+)
+
+summary(caldern[, c("u_star", "richardson", "exchange_temp")])
+```
+
+```{r turbulence-plot, fig.width=8, fig.height=7}
+op <- par(mfrow = c(3, 1), mar = c(3.5, 4, 2, 1))
+
+plot(caldern$datetime, caldern$u_star, type = "l",
+     xlab = "Zeit", ylab = "m s-1", main = "u*: Schubspannungsgeschwindigkeit")
+
+plot(caldern$datetime, caldern$richardson, type = "l",
+     xlab = "Zeit", ylab = "Ri", main = "Gradient-Richardson-Zahl")
+abline(h = 0, lty = 2, col = "grey50")
+
+plot(caldern$datetime, caldern$exchange_temp, type = "l",
+     xlab = "Zeit", ylab = "", main = "Austauschdiagnose Temperatur")
+
+par(op)
+```
+
+Diese Werte sind Screeninggrößen. Sie sagen, ob eine Profilauswertung plausibel konditioniert ist. Wenn Windunterschiede sehr klein sind oder die Stabilität stark wechselt, werden spätere Profilflüsse empfindlich. Das ist kein Grund, die Werte zu verstecken. Es ist ein Grund, sie als Diagnose zu lesen.
+
+# Objekt ausgeben und plotten
+
+Nach einer Beispielrechnung enthält das Objekt zusätzliche Felder. Für den Einstieg reicht es, das Objekt in eine Tabelle umzuwandeln und einzelne Zeitreihen mit base R zu plotten.
+
+```{r object-output}
+ws_pt <- turb_flux_calc(ws, pt_only = TRUE)
+ws_table <- as.data.frame(ws_pt)
+
+names(ws_table)
+head(ws_table)
+```
+
+```{r object-simple-plot, fig.width=8, fig.height=4}
+plot(ws_table$datetime, ws_table$temp, type = "l",
+     xlab = "Zeit", ylab = "°C", main = "Temperatur aus dem weather_station-Objekt")
+```
+
+::: {.callout-tip title="Arbeitsauftrag"}
+Ändern Sie kontrolliert eine Objektannahme, zum Beispiel `surface_type` oder `obs_height`, und bauen Sie das Objekt neu. Prüfen Sie anschließend, welche Folgefunktionen andere Ergebnisse liefern. Dokumentieren Sie nicht nur den Zahlenunterschied, sondern welche fachliche Annahme dahintersteht.
+:::

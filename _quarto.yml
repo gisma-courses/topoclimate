@@ -3,7 +3,7 @@ project:
   output-dir: docs/
   render:
     - "index.qmd"
-    - "unit01/*.qmd"
+    - "pages/*.qmd"
     - "slides/perfekter_gipfel_gesamtrahmen.qmd"
 website:
   favicon: /images/logo.png
@@ -41,13 +41,13 @@ website:
       - section: "Sitzungen"
         contents:
           - text: "L01 Datenbasis und Station"
-            href: unit01/L01_fieldclim_datenbasis_und_station.qmd
+            href: pages/L01_fieldclim_datenbasis_und_station.qmd
           - text: "L02 Strahlung und Bodenwärmestrom"
-            href: unit01/L02_strahlung_bodenwaermestrom_datenpruefung.qmd
+            href: pages/L02_strahlung_bodenwaermestrom_datenpruefung.qmd
           - text: "L03 weather_station-Objekt"
-            href: unit01/L03_weather_station_objekt_und_basisworkflow.qmd
+            href: pages/L03_weather_station_objekt_und_basisworkflow.qmd
           - text: "L04 Wärmeflussmethoden"
-            href: unit01/L04_waermeflussmethoden_mit_fieldclim.qmd
+            href: pages/L04_waermeflussmethoden_mit_fieldclim.qmd
       - section: "Foliensätze zu den Readern"
         contents:
           - text: "Der perfekte Gipfel"
