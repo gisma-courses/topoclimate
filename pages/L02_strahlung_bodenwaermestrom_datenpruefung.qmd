@@ -11,15 +11,17 @@ execute:
   message: false
 ---
 
-```{r setup}
-
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-	message = FALSE,
-	warning = FALSE,
-	collapse = TRUE,
-	comment = "#>",
-	include = FALSE
+  echo = TRUE,
+  include = TRUE,
+  collapse = TRUE,
+  comment = "#>",
+  warning = FALSE,
+  message = FALSE
 )
+```
+
 ```
 ::: {.callout-note title="Quellcode"}
 Der komplette R-Code dieser Lektion wird im gerenderten Dokument sichtbar angezeigt. Zusätzlich steht der extrahierte und ausführlich kommentierte R-Code als Datei bereit: [`L02_strahlung_bodenwaermestrom_datenpruefung.R`](../assets/scripts/L02_strahlung_bodenwaermestrom_datenpruefung.R).

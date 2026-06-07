@@ -11,8 +11,7 @@ execute:
   message: false
 ---
 
-```{r setup}
-
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   echo = TRUE,
   include = TRUE,
@@ -22,6 +21,7 @@ knitr::opts_chunk$set(
   message = FALSE
 )
 ```
+
 ::: {.callout-note title="Quellcode"}
 Der komplette R-Code dieser Lektion wird im gerenderten Dokument sichtbar angezeigt. Zusätzlich steht der extrahierte und ausführlich kommentierte R-Code als Datei bereit: [`L04_waermeflussmethoden_mit_fieldclim.R`](../assets/scripts/L04_waermeflussmethoden_mit_fieldclim.R).
 :::
