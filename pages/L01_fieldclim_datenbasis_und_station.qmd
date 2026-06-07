@@ -12,8 +12,9 @@ execute:
 ---
 
 ```{r setup}
+#| include: false
 knitr::opts_chunk$set(
-  echo = TRUE,
+  echo = FALSE,
   include = TRUE,
   collapse = TRUE,
   comment = "#>",

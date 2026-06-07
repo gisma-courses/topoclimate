@@ -12,13 +12,13 @@ execute:
 ---
 
 ```{r setup}
+#| include: false
 knitr::opts_chunk$set(
-  echo = TRUE,
-  include = TRUE,
-  collapse = TRUE,
-  comment = "#>",
-  warning = FALSE,
-  message = FALSE
+	message = FALSE,
+	warning = FALSE,
+	collapse = TRUE,
+	comment = "#>",
+	include = FALSE
 )
 ```
 ::: {.callout-note title="Quellcode"}
