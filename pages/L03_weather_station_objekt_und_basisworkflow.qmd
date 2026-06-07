@@ -309,5 +309,28 @@ plot(ws_table$datetime, ws_table$temp, type = "l",
 ```
 
 ::: {.callout-tip title="Arbeitsauftrag"}
+
+#| echo: true
+
+source("../assets/scripts/read_cr1000_to_fieldclim.R")
+
+ws <- read_cr1000_to_fieldclim(
+  file = "../data/CR1000_Table1_26Mar.dat",
+  lon = -0,          # Stations-Lon  ersetzen
+  lat = -0,           # Stations-Lat ersetzen
+  elev = 0,           # Stations-Höhe ersetzen
+  tz = "America/Guayaquil",
+  z1 = 2,
+  z2 = 10,
+  surface_type = "field",
+  rad_bal_sign = 1,
+  soil_flux_sign = 1
+)
+
+class(ws)
+names(ws)
+
+fieldClim::inspect_weather_station_inputs(ws)
+
 Ändern Sie kontrolliert eine Objektannahme, zum Beispiel `surface_type` oder `obs_height`, und bauen Sie das Objekt neu. Prüfen Sie anschließend, welche Folgefunktionen andere Ergebnisse liefern. Dokumentieren Sie nicht nur den Zahlenunterschied, sondern welche fachliche Annahme dahintersteht.
 :::
