@@ -21,7 +21,10 @@ website:
   twitter-card:
     creator: "@gisma"
   comments: false
-
+  navbar:
+    right:
+      - text: "fieldClim"
+        href: https://gisma.github.io/migration-fieldclim/
   # navbar:
   #   logo: /images/logo.png
   #   right:
