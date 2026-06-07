@@ -51,10 +51,10 @@ website:
             href: pages/L03_weather_station_objekt_und_basisworkflow.qmd
           - text: "L04 Wärmeflussmethoden"
             href: pages/L04_waermeflussmethoden_mit_fieldclim.qmd
-      - section: "Foliensätze zu den Readern"
-        contents:
-          - text: "Der perfekte Gipfel"
-            href: slides/perfekter_gipfel_gesamtrahmen.qmd
+      # - section: "Foliensätze zu den Readern"
+      #   contents:
+      #     - text: "Der perfekte Gipfel"
+      #       href: slides/perfekter_gipfel_gesamtrahmen.qmd
 
 
 execute:
