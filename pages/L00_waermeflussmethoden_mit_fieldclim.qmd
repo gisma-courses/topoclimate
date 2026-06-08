@@ -1,0 +1,212 @@
+---
+title: "Methodenkompass: fieldClim-Verfahren verstehen und auswählen"
+author: "Jörg Bendix & Chris Reudenbach"
+title-block-banner: ../images/splash.png
+title-block-banner-color: black
+bibliography:
+  - ../assets/geoinfo.bib
+  - ../assets/fieldclim_methodenkompass.bib
+lang: de
+comments: false
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Ziel dieser Seite
+
+Diese Seite ist eine Verständniskarte für die in `fieldClim` verwendeten Verfahren. Sie ordnet die Methoden nach ihrer praktischen Rolle: Welche Messarchitektur brauchen sie? Welche Frage beantworten sie? Welche Aussage darf aus dem Ergebnis abgeleitet werden?
+
+Die Verfahren sind schwer auseinanderzuhalten, weil ähnliche Eingangsgrößen verwendet werden und am Ende ähnliche Begriffe auftauchen: fühlbare Wärme, latente Wärme, Verdunstung, Restterm, Stabilität. Die klare Trennung entsteht über die **Arbeitsrolle** der Methode. Manche Verfahren teilen verfügbare Energie auf. Manche schätzen zuerst einen Fluss und setzen den zweiten als Rest. Manche liefern eine Verdunstungsschätzung. Manche dienen vor allem der Profil- und Stabilitätsdiagnose.
+
+Die Theorie-Vignette von `fieldClim` beschreibt diese methodischen Familien und ihre Bilanzlogik ausführlicher [@fieldclimTheory]. Diese Seite übersetzt diese Grundlage in eine pragmatische Entscheidungshilfe für Kurs, Stationsauswertung und Ergebnistext.
+
+::: {.callout-note title="Arbeitsprinzip"}
+Jede Methode wird hier über ihre Aufgabe gelesen. Entscheidend ist der Zusammenhang aus Messaufbau, Methode und zulässiger Aussage.
+:::
+
+![Info-Grafik Methoden der fieldClim Verfahren](../images/methoden.png)
+
+
+# Der erste Filter: Welche Station habe ich?
+
+Die Methodenauswahl beginnt mit der Messarchitektur. Die vorhandenen Sensoren bestimmen, welche Aussage belastbar formuliert werden kann.
+
+| Stationsausstattung | Naheliegende Methoden | Sinnvolle Frage |
+|---|---|---|
+| Netto-Strahlung, Bodenwärmestrom, Temperatur, Feuchte und Wind in einer Höhe | Priestley–Taylor, Penman, verfügbare Energie | Wie plausibel ist Verdunstung aus Energieangebot und atmosphärischer Nachfrage? |
+| Netto-Strahlung, Bodenwärmestrom, Temperatur in zwei Höhen und Wind | Bulk–Residual | Wie stark ist der sensible Wärmeaustausch aus Temperaturunterschied und Austauschbedingungen? |
+| Netto-Strahlung, Bodenwärmestrom, Temperatur und Feuchte in zwei Höhen | Bowen Ratio | Wie teilt der gemessene Temperatur- und Feuchtegradient die verfügbare Energie auf? |
+| Temperatur, Feuchte und Wind in zwei Höhen mit belastbarer Höhenlogik | Monin/Profile, Stabilitätsdiagnostik | Wie gekoppelt und stabil ist das Vertikalprofil? |
+| Turm, Bestand, Wald oder komplexes Gelände | Austauschschicht und Höhenbezug zuerst klären | Welche Luftschicht wird interpretiert? |
+
+# Die gemeinsame Grundlage: verfügbare Energie
+
+Alle Verfahren beziehen sich auf denselben Energierahmen. Netto-Strahlung beschreibt den radiativen Energieinput oder Energieverlust an der Oberfläche. Bodenwärmestrom beschreibt den Anteil, der in den Boden geht oder aus dem Boden kommt. Die verbleibende Energie steht für Austausch mit der bodennahen Luft zur Verfügung.
+
+Für die praktische Arbeit reicht diese Lesart:
+
+- `Q*` setzt den radiativen Rahmen.
+- `B` zieht den Bodenanteil ab.
+- `H` beschreibt fühlbare Wärme.
+- `LE` beschreibt latente Wärme bzw. Verdunstungsenergie.
+- `R_E` beschreibt den Rest, der durch Methode, Messung und Skala offen bleibt.
+
+Diese Ebene ist der wichtigste Plausibilitätstest. Fehler in Vorzeichen, Einheiten oder Zeitbezug von `Q*` und `B` wandern in jede weitere Methode.
+
+# Die Verfahren als Arbeitsrollen
+
+## Priestley–Taylor: energiegetriebene Verdunstungslogik
+
+Priestley–Taylor fragt: **Welche latente Wärme ist aus der verfügbaren Energie plausibel, wenn die aerodynamische Detailkopplung stark vereinfacht wird?**
+
+Der Ansatz ist besonders nützlich, wenn eine Station Netto-Strahlung, Bodenwärmestrom und meteorologische Basisgrößen liefert, aber keine belastbaren Vertikalgradienten besitzt. Die Methode ist auch didaktisch stark, weil sie die Rolle der verfügbaren Energie klar sichtbar macht [@priestley1972].
+
+| Gut für | Kritisch bei | Ergebnis lesen als |
+|---|---|---|
+| erste Verdunstungsdiagnose, Tagesgangvergleich, energiegetriebene Situationen, Vergleich gegen komplexere Verfahren | trockene oder gestresste Oberflächen, starke Advektion, heterogene Flächen, unklarer Oberflächenzustand | energiegetriebene Latentwärmeschätzung mit empirischer Kopplungsannahme |
+
+**Praktischer Berichtssatz:**  
+Priestley–Taylor wurde als energiegetriebene Latentwärmeschätzung verwendet. Die Interpretation stützt sich auf verfügbare Energie und eine empirische Kopplungsannahme.
+
+## Bowen Ratio: Partitionierung über Temperatur- und Feuchtegradienten
+
+Bowen fragt: **Wie teilt der gemessene Temperatur- und Feuchtegradient die verfügbare Energie in fühlbare und latente Wärme auf?**
+
+Der Ansatz ist stark, wenn zwei Höhen sauber messen und die Gradienten das Austauschsignal der Fläche repräsentieren. Temperaturgradient und Feuchtegradient bilden dabei den Kern. Genau diese Gradienten machen die Methode zugleich empfindlich gegenüber Sensoroffsets, Tau, Kondensation, kleinen Differenzen und Vorzeichenwechseln [@bowen1926; @ohmura1982; @payero2003].
+
+| Gut für | Kritisch bei | Ergebnis lesen als |
+|---|---|---|
+| offene homogene Flächen, zwei sauber kalibrierte Temperatur- und Feuchtehöhen, Energiepartitionierung, Vergleich mit anderen Methoden | kleine Feuchtegradienten, Nachtstunden, Tau, Kondensation, Sensoroffsets, heterogener Fetch | gradientenbasierte Partition der verfügbaren Energie |
+
+**Praktischer Berichtssatz:**  
+Bowen wurde als gradientenbasierte Partitionierung der verfügbaren Energie verwendet. Fälle mit kleinen Gradienten, Vorzeichenwechseln oder numerischer Begrenzung wurden als unsicher markiert.
+
+## Bulk–Residual: sensible Wärme aus Austauschbedingungen
+
+Bulk–Residual fragt: **Wie groß ist der sensible Wärmeaustausch aus Temperaturunterschied, Wind und Austauschannahme?**
+
+Bulk gehört zur aerodynamischen Methodenfamilie. Der Ansatz schätzt zuerst den fühlbaren Wärmefluss. Die latente Wärme entsteht anschließend als verbleibender Energierest. Diese Rollenverteilung unterscheidet Bulk klar von Bowen: Bowen partitioniert über Temperatur- und Feuchtegradienten; Bulk fokussiert auf sensiblen Austausch aus Temperaturgradient und aerodynamischer Kopplung [@brutsaert1982; @stull1988; @garratt1992; @prueger2005].
+
+| Gut für | Kritisch bei | Ergebnis lesen als |
+|---|---|---|
+| zwei Temperaturhöhen und Wind, fehlende oder instabile Feuchtegradienten, Sensitivität auf Wind und Höhenabstand, Vergleich gegen Bowen | schwacher Wind, unklare Höhenlogik, stabile Schichtung, rauer Bestand, komplexes Gelände | aerodynamische H-Schätzung plus residuale LE-Größe |
+
+**Praktischer Berichtssatz:**  
+Der Bulk-Pfad wurde als aerodynamische Schätzung der fühlbaren Wärme verwendet. Die latente Wärme wurde als Energierest berechnet und übernimmt die Unsicherheit aus verfügbarer Energie und Bulk-H.
+
+## Penman: Verdunstung aus Energieangebot und atmosphärischer Nachfrage
+
+Penman fragt: **Wie groß ist die latente Wärme bzw. Verdunstung, wenn Energieangebot und atmosphärische Nachfrage gemeinsam berücksichtigt werden?**
+
+Penman und Penman–Monteith bilden eine zentrale Familie der Verdunstungsschätzung aus Wetterdaten. Der Schwerpunkt liegt auf Latentwärme bzw. Evapotranspiration. Die Methode ist besonders wichtig, wenn Feuchte, Wind und Strahlung gemeinsam in eine Verdunstungslogik eingehen sollen [@penman1948; @monteith1965; @allen1998; @shuttleworth1993].
+
+| Gut für | Kritisch bei | Ergebnis lesen als |
+|---|---|---|
+| Verdunstungsfragen, eine Messhöhe mit Temperatur/Feuchte/Wind/Strahlung, Vergleich mit Priestley–Taylor, atmosphärische Nachfrage | unklare Oberflächen- oder Bestandsresistenz, heterogene Oberfläche, unpassende Referenzoberfläche | Latentwärme- bzw. Verdunstungsschätzung |
+
+**Praktischer Berichtssatz:**  
+Penman wurde als Latentwärmeschätzung aus Energieangebot und atmosphärischer Nachfrage verwendet. Der verbleibende energetische Anteil wurde als ungelöstes Komplement behandelt.
+
+## Monin/Profile: Stabilität und vertikale Kopplung
+
+Monin/Profile fragt: **Wie konsistent sind Wind-, Temperatur- und Feuchteprofile mit einer turbulenten Austauschdiagnose?**
+
+Diese Methodenfamilie dient vor allem der Diagnose von Profil, Stabilität, Rauigkeit und Kopplung. Sie ist besonders nützlich, wenn die vertikale Austauschschicht selbst Teil der Fragestellung ist. Die zentrale Literatur liegt in der Monin–Obukhov-Ähnlichkeitstheorie und der Grenzschichtmeteorologie [@monin1954; @businger1971; @stull1988; @foken2006].
+
+| Gut für | Kritisch bei | Ergebnis lesen als |
+|---|---|---|
+| Stabilitätsklassifikation, Kopplungsdiagnose, Profilprüfung, Turm- oder Bestandssituationen mit geklärter Austauschschicht | kleine Gradienten, schwache Windscherung, falscher Höhenbezug, Waldinnenraum, komplexe Topographie | Profil- und Stabilitätsdiagnose mit sichtbarem Restterm |
+
+**Praktischer Berichtssatz:**  
+Monin/Profile wurde als Stabilitäts- und Kopplungsdiagnose verwendet. Der verbleibende Rest wurde als Hinweis auf Mess-, Skalen- oder Modellinkonsistenz sichtbar gelassen.
+
+# Die Ergebnislogik der Methoden
+
+| Methode | Primäre Arbeitsrolle | Abgeleitete Größe | Gute Leitfrage |
+|---|---|---|---|
+| Priestley–Taylor | Latentwärme aus verfügbarer Energie | fühlbare Wärme innerhalb der Partition | Wie viel Verdunstung ist energiegetrieben plausibel? |
+| Bowen | Verhältnis aus fühlbarer und latenter Wärme über Gradienten | beide Flüsse aus verfügbarer Energie | Wie teilen Temperatur- und Feuchtegradienten die Energie auf? |
+| Bulk–Residual | fühlbare Wärme aus Austauschbedingungen | latente Wärme als Energierest | Wie stark ist sensibler Austausch aus Temperaturgradient und Wind? |
+| Penman | Latentwärme aus Energie und atmosphärischer Nachfrage | energetisches Komplement bleibt offen | Wie groß ist Verdunstung unter den gegebenen Wetterbedingungen? |
+| Monin/Profile | Profil, Rauigkeit und Stabilität | Rest bleibt diagnostisch sichtbar | Wie stabil und gekoppelt ist die vertikale Austauschschicht? |
+
+# Typische Stolperstellen
+
+| Stolperstelle | Saubere Lesart |
+|---|---|
+| Geschlossene Bilanz | Bilanzschluss beschreibt die Rechenlogik der Methode. |
+| Residuale latente Wärme | Residuale LE ist der verbleibende Energierest nach der zuerst geschätzten Größe. |
+| Kleine Gradienten | Kleine Gradienten erhöhen die Bedeutung von Sensoroffsets und numerischer Instabilität. |
+| Zwei Messhöhen | Zwei Höhen reichen nur bei sauberer Höhenlogik, Kalibrierung und repräsentativem Austauschraum. |
+| Penman-Ergebnis | Penman beschreibt primär Latentwärme bzw. Verdunstung. |
+| Monin/Profile-Rest | Der Restterm ist diagnostische Information zur Konsistenz von Profil- und Energiebilanzebene. |
+
+# Praktische Auswahlregeln
+
+## Eine Messhöhe
+
+Priestley–Taylor und Penman sind die plausiblen Startpunkte. Damit lassen sich Energieangebot und Verdunstungsnachfrage diskutieren.
+
+**Berichtssatz:**  
+Die Messarchitektur erlaubt eine energie- und nachfragebasierte Latentwärmeschätzung. Eine gradientenbasierte Partitionierung wurde daher nicht angesetzt.
+
+## Zwei Temperaturhöhen und Wind
+
+Bulk–Residual ist sinnvoll, wenn die Wirkung von Temperaturunterschied, Wind und Höhenabstand auf fühlbare Wärme untersucht werden soll.
+
+**Berichtssatz:**  
+Bulk–Residual wurde genutzt, um den sensiblen Wärmeaustausch aus Temperaturgradient und Austauschannahme zu schätzen. Die latente Wärme wurde als Energierest interpretiert.
+
+## Zwei Temperatur- und Feuchtehöhen
+
+Bowen ist fachlich naheliegend, wenn die Gradienten belastbar sind.
+
+**Berichtssatz:**  
+Bowen wurde verwendet, weil Temperatur- und Feuchtegradienten zwischen zwei Höhen vorlagen. Die Auswertung wurde auf Gradientenstabilität, Vorzeichenwechsel und Grenzfälle geprüft.
+
+## Profil, Wind und Stabilität
+
+Monin/Profile ist der passende Diagnosepfad, wenn die vertikale Kopplung und Stabilität selbst Teil der Fragestellung sind.
+
+**Berichtssatz:**  
+Monin/Profile wurde zur Diagnose von Stabilität und vertikaler Kopplung genutzt. Der Restterm wurde als Konsistenzsignal ausgewertet.
+
+# Minimaler Methodenbericht
+
+Eine auswertbare Methodenbeschreibung sollte mindestens diese Punkte enthalten:
+
+- verwendete Messgrößen,
+- verwendete Messhöhen,
+- Vorzeichenkonvention für Netto-Strahlung und Bodenwärmestrom,
+- gewählte Methode und ihre Arbeitsrolle,
+- direkt geschätzte Größe,
+- abgeleitete oder residuale Größe,
+- Behandlung kleiner Gradienten, Vorzeichenwechsel, fehlender Werte und Stabilitätsprobleme.
+
+::: {.callout-tip title="Musterformulierung"}
+Die verfügbare Energie wurde aus Netto-Strahlung und Bodenwärmestrom bestimmt. Priestley–Taylor wurde als energiegetriebene Latentwärmeschätzung gelesen. Bowen wurde als gradientenbasierte Partitionierung verwendet. Bulk–Residual wurde als aerodynamische Schätzung der fühlbaren Wärme mit residualer latenter Wärme interpretiert. Penman wurde als Latentwärmeschätzung ausgewertet. Monin/Profile wurde als Profil- und Stabilitätsdiagnose eingesetzt; der Restterm wurde als diagnostische Information beibehalten.
+:::
+
+# Breite Literaturübersicht als Arbeitsanker
+
+Diese Literaturübersicht ordnet Quellen nach ihrer Funktion für den Methodenkompass. Die Einträge sind zusätzlich als BibTeX-Datei im Projekt abgelegt.
+
+| Literaturanker | Rolle für diese Seite | Warum relevant |
+|---|---|---|
+| @fieldclimTheory | Paketlogik und Methodensemantik | trennt Partition, Residualschluss, Latentwärme-Schätzung und Profil-Diagnostik |
+| @bowen1926 | Ursprung der Bowen-Ratio-Idee | begründet das Verhältnis fühlbarer zu latenter Wärme |
+| @ohmura1982; @payero2003 | Bowen-Datenfilterung | zeigen die praktische Empfindlichkeit gegenüber kleinen oder ungünstigen Gradienten |
+| @penman1948 | Kombination aus Energie und aerodynamischem Term | Grundlinie für Verdunstung aus Wetterdaten |
+| @monteith1965; @allen1998 | Penman–Monteith und Referenz-ET | Standardrahmen für Verdunstung mit Widerstandslogik |
+| @priestley1972 | energiegetriebene Verdunstung | Grundlage der reduzierten Latentwärmelogik |
+| @brutsaert1982; @stull1988; @garratt1992 | Grenzschicht, Bulk-Transfer und Profile | methodischer Rahmen für aerodynamischen Austausch und Stabilität |
+| @monin1954; @businger1971; @foken2006 | Monin–Obukhov und Ähnlichkeitstheorie | Grundlage für Profil- und Stabilitätsdiagnostik |
+| @campbell1998; @oke1987 | Umweltphysik und Mikroklima | didaktische Grundlage für Oberfläche, Strahlung und bodennahe Atmosphäre |
+| @prueger2005 | aerodynamische Praxisansätze | praxisnaher Bezug für Bulk- und Widerstandsansätze |
+| @foken2008; @wilson2002; @leuning2012; @mauder2024 | Energiebilanzschluss und Restterme | begründen die diagnostische Bedeutung von Resttermen und Skalenproblemen |
+
+# Kurzfazit
+
+Die `fieldClim`-Verfahren bilden unterschiedliche Arbeitsrollen für Stationsdaten ab. Die Auswahl folgt deshalb der Messarchitektur und der gewünschten Aussage. Bowen partitioniert verfügbare Energie über Temperatur- und Feuchtegradienten. Bulk schätzt fühlbare Wärme über Austauschbedingungen. Penman schätzt latente Wärme über Energieangebot und atmosphärische Nachfrage. Priestley–Taylor liefert eine reduzierte energiegetriebene Latentwärmelogik. Monin/Profile diagnostiziert vertikale Kopplung und Stabilität.

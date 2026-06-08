@@ -43,6 +43,8 @@ website:
         href: index.qmd
       - section: "Sitzungen"
         contents:
+          - text: "L00 fieldClim-Verfahren verstehen und auswählen"
+            href: pages/L00_waermeflussmethoden_mit_fieldclim.qmd        
           - text: "L01 Datenbasis und Station"
             href: pages/L01_fieldclim_datenbasis_und_station.qmd
           - text: "L02 Strahlung und Bodenwärmestrom"
