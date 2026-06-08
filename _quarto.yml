@@ -10,7 +10,7 @@ website:
   bread-crumbs: false
   open-graph: true
   page-navigation: true
-  title: "Geländeklimatologie"
+  title: "Geländeklima und Energieflüsse mit fieldClim"
   site-url: https://gisma-courses.github.io/topoclimate
   repo-url: https://github.com/gisma-courses/topoclimate
   repo-actions: [edit, issue]
