@@ -26,6 +26,7 @@ Die Theorie-Vignette von `fieldClim` beschreibt diese methodischen Familien und 
 Jede Methode wird hier über ihre Aufgabe gelesen. Entscheidend ist der Zusammenhang aus Messaufbau, Methode und zulässiger Aussage.
 :::
 
+
 ![Info-Grafik Methoden der fieldClim Verfahren](../images/methoden.png)
 
 
